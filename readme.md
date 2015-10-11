@@ -18,4 +18,4 @@ and modified for JSON output by John David Pressman.
 - Actually save stories to a JSON format.
 - Use the HN API
 - Parse also the second page of HN saved stories
-- Better handling of the script's input parameters
+
