@@ -11,10 +11,11 @@ __license__ = "BSD"
 __copyright__ = "Copyright 2013-2014, Luciano Fiandesio"
 __author__ = "Luciano Fiandesio <http://fiandes.io/>"
 
+import argparse
 import re
 import sys
 import urllib
-import urlparse
+import urllib.parse as urlparse
 from bs4 import BeautifulSoup
 import requests
 from types import *
@@ -22,8 +23,15 @@ import xml.etree.ElementTree as xml
 
 HACKERNEWS = 'https://news.ycombinator.com'
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument("username", help="The Hacker News username to grab the stories from.")
+parser.add_argument("password", help="The password to login with using the username.")
+parser.add_argument("filename", help="Filepath to store the JSON document at.")
+arguments = parser.parse_args()
+
 def getSavedStories(session, hnuser):
-    print "...get saved stories..."
+    print("...get saved stories...")
     savedStories = {}
     saved = session.get(HACKERNEWS + '/saved?id=' + hnuser)
 
@@ -31,14 +39,14 @@ def getSavedStories(session, hnuser):
 
     for tag in soup.findAll('td',attrs={'class':'title'}):
 
-        if type(tag.a) is not NoneType:
+        if type(tag.a) is not type(None):
             try:
                 _href = tag.a['href']
                 if not str.startswith(str(_href), '/x?fnid'): # skip the 'More' link
                     _href = HACKERNEWS+_href if str.startswith(str(_href), 'item?') else _href
                     savedStories[_href] = tag.a.text
             except:
-                print "The saved story has no link, skipping"
+                print("The saved story has no link, skipping")
     return savedStories
 
 def loginToHackerNews(username, password):
@@ -63,31 +71,12 @@ def loginToHackerNews(username, password):
 
     return s # return the http session
 
-def postToPinboard(token, url, title):
-
-    payload = {
-        'auth_token':token,
-        'url': url,
-        'description': title,
-        'tags': 'hackernews',
-        'replace':'no'
-    }
-    r = requests.get('https://api.pinboard.in/v1/posts/add', params=payload)
-    #print r.url
-    return 1 if isAdded(r.text) else 0
-
-def isAdded(addresult):
-    res = xml.fromstring(addresult)
-    code = res.attrib["code"]
-    return code == 'done'
-
 def main():
-    count = 0
-    links = getSavedStories( loginToHackerNews(sys.argv[1],sys.argv[2] ),sys.argv[1] )
-    for key, value in links.iteritems():
-        count+=postToPinboard(sys.argv[3], key, value)
-
-    print "Added %d links to Pinboard" % count
+    links = getSavedStories( loginToHackerNews(arguments.username,
+                                               arguments.password ),
+                             arguments.username)
+    for key, value in links.items():
+        print(key, value)
 
 if __name__ == "__main__":
     main()
