@@ -16,6 +16,7 @@ import re
 import sys
 import urllib
 import urllib.parse as urlparse
+import json
 from bs4 import BeautifulSoup
 import requests
 from types import *
@@ -69,12 +70,21 @@ def loginToHackerNews(username, password):
 
     return s # return the http session
 
+def getHackerNewsItem(item_id):
+    """Get an 'item' as specified in the HackerNews v0 API."""
+    item_json_link = "https://hacker-news.firebaseio.com/v0/item/" + item_id + ".json"
+    with urllib.request.urlopen(item_json_link) as item_json:
+        return json.loads(item_json.read().decode('utf-8'))
+    
+
 def main():
-    links = getSavedStories( loginToHackerNews(arguments.username,
+    json_items = {"saved_stories":list(), "saved_comments":list()}
+    story_ids = getSavedStories( loginToHackerNews(arguments.username,
                                                arguments.password ),
                              arguments.username)
-    for story_id in links:
-        print(story_id)
+    for story_id in story_ids:
+        json_items["saved_stories"].append(getHackerNewsItem(story_id))
+    print(json.dumps(json_items))
 
 if __name__ == "__main__":
     main()
