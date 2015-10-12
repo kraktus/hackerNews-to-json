@@ -11,11 +11,8 @@ and modified for JSON output by John David Pressman.
 
 ## How to use ##
 
-`python hn2json.py [hn user] [hn password] [JSON filename]`
+`python hn2json.py [hn user] [hn password] -n [Number of pages to grab] -f [JSON filename]`
 
 ## TODO ##
 
-- Actually save stories to a JSON format.
-- Use the HN API
-- Parse also the second page of HN saved stories
-
+- Get saved comments too.
