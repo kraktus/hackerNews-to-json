@@ -88,7 +88,12 @@ def main():
                              arguments.username, range(1, arguments.number + 1))
     for story_id in story_ids:
         json_items["saved_stories"].append(getHackerNewsItem(story_id))
-    print(json.dumps(json_items))
+        sys.stderr.write("Got item " + story_id + ".\n")
+    if arguments.file:
+        with open(arguments.file, 'w') as outfile:
+            json.dump(json_items, outfile)
+    else:
+        print(json.dumps(json_items))
 
 if __name__ == "__main__":
     main()
