@@ -28,24 +28,25 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("username", help="The Hacker News username to grab the stories from.")
 parser.add_argument("password", help="The password to login with using the username.")
-parser.add_argument("filename", help="Filepath to store the JSON document at.")
+parser.add_argument("-f", "--file", help="Filepath to store the JSON document at.")
+parser.add_argument("-n", "--number", default=1, type=int, help="Number of pages to grab, default 1.")
+
 arguments = parser.parse_args()
 
-def getSavedStories(session, hnuser):
-    print("...get saved stories...")
+def getSavedStories(session, hnuser, page_range):
     story_ids = []
-    saved = session.get(HACKERNEWS + '/saved?id=' + hnuser)
-
-    soup = BeautifulSoup(saved.content)
-
-    for tag in soup.findAll('td',attrs={'class':'subtext'}):
-        if tag.a is not type(None):
-            a_tags = tag.find_all('a')
-            for a_tag in a_tags:
-                if a_tag['href'][:5] == 'item?':
-                    story_id = a_tag['href'].split('id=')[1]
-                    story_ids.append(story_id)
-                    break
+    for page_index in page_range:
+        saved = session.get(HACKERNEWS + '/saved?id=' + 
+                            hnuser + "&p=" + str(page_index))
+        soup = BeautifulSoup(saved.content)
+        for tag in soup.findAll('td',attrs={'class':'subtext'}):
+            if tag.a is not type(None):
+                a_tags = tag.find_all('a')
+                for a_tag in a_tags:
+                    if a_tag['href'][:5] == 'item?':
+                        story_id = a_tag['href'].split('id=')[1]
+                        story_ids.append(story_id)
+                        break
     return story_ids
 
 def loginToHackerNews(username, password):
@@ -73,15 +74,18 @@ def loginToHackerNews(username, password):
 def getHackerNewsItem(item_id):
     """Get an 'item' as specified in the HackerNews v0 API."""
     item_json_link = "https://hacker-news.firebaseio.com/v0/item/" + item_id + ".json"
-    with urllib.request.urlopen(item_json_link) as item_json:
-        return json.loads(item_json.read().decode('utf-8'))
-    
+    try:
+        with urllib.request.urlopen(item_json_link) as item_json:
+            return json.loads(item_json.read().decode('utf-8'))
+    except urllib.error.URLError:
+        return {"title":"Item " + item_id + " could not be retrieved",
+                "id":item_id}
 
 def main():
     json_items = {"saved_stories":list(), "saved_comments":list()}
     story_ids = getSavedStories( loginToHackerNews(arguments.username,
                                                arguments.password ),
-                             arguments.username)
+                             arguments.username, range(1, arguments.number + 1))
     for story_id in story_ids:
         json_items["saved_stories"].append(getHackerNewsItem(story_id))
     print(json.dumps(json_items))
