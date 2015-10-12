@@ -32,22 +32,20 @@ arguments = parser.parse_args()
 
 def getSavedStories(session, hnuser):
     print("...get saved stories...")
-    savedStories = {}
+    story_ids = []
     saved = session.get(HACKERNEWS + '/saved?id=' + hnuser)
 
     soup = BeautifulSoup(saved.content)
 
-    for tag in soup.findAll('td',attrs={'class':'title'}):
-
-        if type(tag.a) is not type(None):
-            try:
-                _href = tag.a['href']
-                if not str.startswith(str(_href), '/x?fnid'): # skip the 'More' link
-                    _href = HACKERNEWS+_href if str.startswith(str(_href), 'item?') else _href
-                    savedStories[_href] = tag.a.text
-            except:
-                print("The saved story has no link, skipping")
-    return savedStories
+    for tag in soup.findAll('td',attrs={'class':'subtext'}):
+        if tag.a is not type(None):
+            a_tags = tag.find_all('a')
+            for a_tag in a_tags:
+                if a_tag['href'][:5] == 'item?':
+                    story_id = a_tag['href'].split('id=')[1]
+                    story_ids.append(story_id)
+                    break
+    return story_ids
 
 def loginToHackerNews(username, password):
     s = requests.Session() # init a session (use cookies across requests)
@@ -75,8 +73,8 @@ def main():
     links = getSavedStories( loginToHackerNews(arguments.username,
                                                arguments.password ),
                              arguments.username)
-    for key, value in links.items():
-        print(key, value)
+    for story_id in links:
+        print(story_id)
 
 if __name__ == "__main__":
     main()
