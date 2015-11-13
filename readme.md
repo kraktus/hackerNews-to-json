@@ -12,7 +12,3 @@ and modified for JSON output by John David Pressman.
 ## How to use ##
 
 `python hn2json.py [hn user] [hn password] -n [Number of pages to grab] -f [JSON filename]`
-
-## TODO ##
-
-- Get saved comments too.
