@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """Python-Pinboard
 
-Python script for syncronizing Hacker News <http://news.ycombinator.com> saved stories to Pinboard <http://pinboard.in/> via its API.
+Python script for downloading your saved stories and saved comments on Hacker News
+and converting them to a JSON format for easy use.
 
 Originally written on Pythonista on iPad
 """
@@ -30,10 +31,17 @@ parser.add_argument("username", help="The Hacker News username to grab the stori
 parser.add_argument("password", help="The password to login with using the username.")
 parser.add_argument("-f", "--file", help="Filepath to store the JSON document at.")
 parser.add_argument("-n", "--number", default=1, type=int, help="Number of pages to grab, default 1.")
+parser.add_argument("-s", "--stories",  action="store_true", help="Grab stories only.")
+parser.add_argument("-c", "--comments", action="store_true", help="Grab comments only.")
 
 arguments = parser.parse_args()
 
 def getSavedStories(session, hnuser, page_range):
+    """Return a list of story IDs representing your saved stories. 
+
+    This function does not return the actual metadata associated, just the IDs. 
+    This list is traversed and each item inside is grabbed using the Hacker News 
+    API by story ID."""
     story_ids = []
     for page_index in page_range:
         saved = session.get(HACKERNEWS + '/saved?id=' + 
@@ -48,6 +56,28 @@ def getSavedStories(session, hnuser, page_range):
                         story_ids.append(story_id)
                         break
     return story_ids
+
+def getSavedComments(session, hnuser, page_range):
+    """Return a list of IDs representing your saved comments.
+
+    This function does not return the actual metadata associated, just the IDs.
+    This list is traversed and each item inside is grabbed using the Hacker News
+    API by ID."""
+    comment_ids = []
+    for page_index in page_range:
+        saved = session.get(HACKERNEWS + '/saved?id=' + 
+                            hnuser + "&comments=t" + "&p=" + str(page_index))
+        soup = BeautifulSoup(saved.content)
+        for tag in soup.findAll('td',attrs={'class':'default'}):
+            if tag.a is not type(None):
+                a_tags = tag.find_all('a')
+                for a_tag in a_tags:
+                    if a_tag['href'][:5] == 'item?':
+                        comment_id = a_tag['href'].split('id=')[1]
+                        comment_ids.append(comment_id)
+                        break
+    return comment_ids
+
 
 def loginToHackerNews(username, password):
     s = requests.Session() # init a session (use cookies across requests)
@@ -83,17 +113,57 @@ def getHackerNewsItem(item_id):
 
 def main():
     json_items = {"saved_stories":list(), "saved_comments":list()}
-    story_ids = getSavedStories( loginToHackerNews(arguments.username,
-                                               arguments.password ),
-                             arguments.username, range(1, arguments.number + 1))
-    for story_id in story_ids:
-        json_items["saved_stories"].append(getHackerNewsItem(story_id))
-        sys.stderr.write("Got item " + story_id + ".\n")
-    if arguments.file:
-        with open(arguments.file, 'w') as outfile:
-            json.dump(json_items, outfile)
+    if arguments.stories and arguments.comments:
+        # Assume that if somebody uses both flags they mean to grab both
+        arguments.stories = False
+        arguments.comments = False
+        main()
+    elif arguments.stories:
+        story_ids = getSavedStories( loginToHackerNews(arguments.username,
+                                                       arguments.password ),
+                                     arguments.username, 
+                                     range(1, arguments.number + 1))
+        for story_id in story_ids:
+            json_items["saved_stories"].append(getHackerNewsItem(story_id))
+            sys.stderr.write("Got item " + story_id + ".\n")
+        if arguments.file:
+            with open(arguments.file, 'w') as outfile:
+                json.dump(json_items, outfile)
+        else:
+            print(json.dumps(json_items))
+    elif arguments.comments:
+        comment_ids = getSavedComments(loginToHackerNews(arguments.username,
+                                                         arguments.password),
+                                       arguments.username,
+                                       range(1, arguments.number + 1))
+        for comment_id in comment_ids:
+            json_items["saved_comments"].append(getHackerNewsItem(comment_id))
+            sys.stderr.write("Got item " + comment_id + ".\n")
+        if arguments.file:
+            with open(arguments.file, 'w') as outfile:
+                json.dump(json_items, outfile)
+        else:
+            print(json.dumps(json_items))
     else:
-        print(json.dumps(json_items))
+        story_ids = getSavedStories(loginToHackerNews(arguments.username,
+                                                      arguments.password),
+                                    arguments.username,
+                                    range(1, arguments.number + 1))
+        comment_ids = getSavedComments(loginToHackerNews(arguments.username,
+                                                         arguments.password),
+                                       arguments.username,
+                                       range(1, arguments.number + 1))
+        for story_id in story_ids:
+            json_items["saved_stories"].append(getHackerNewsItem(story_id))
+            sys.stderr.write("Got item " + story_id + ".\n")
+        for comment_id in comment_ids:
+            json_items["saved_comments"].append(getHackerNewsItem(comment_id))
+            sys.stderr.write("Got item " + comment_id + ".\n")
+        if arguments.file:
+            with open(arguments.file, 'w') as outfile:
+                json.dump(json_itms, outfile)
+        else:
+            print(json.dumps(json_items))
 
 if __name__ == "__main__":
     main()
