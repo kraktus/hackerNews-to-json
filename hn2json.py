@@ -10,7 +10,7 @@ Originally written on Pythonista on iPad
 __version__ = "1.1"
 __license__ = "BSD"
 __copyright__ = "Copyright 2013-2014, Luciano Fiandesio"
-__author__ = "Luciano Fiandesio <http://fiandes.io/>"
+__author__ = "Luciano Fiandesio <http://fiandes.io/> & John David Pressman <http://jdpressman.com>"
 
 import argparse
 import re
@@ -30,7 +30,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("username", help="The Hacker News username to grab the stories from.")
 parser.add_argument("password", help="The password to login with using the username.")
 parser.add_argument("-f", "--file", help="Filepath to store the JSON document at.")
-parser.add_argument("-n", "--number", default=1, type=int, help="Number of pages to grab, default 1.")
+parser.add_argument("-n", "--number", default=1, type=int, help="Number of pages to grab, default 1. 0 grabs all pages.")
 parser.add_argument("-s", "--stories",  action="store_true", help="Grab stories only.")
 parser.add_argument("-c", "--comments", action="store_true", help="Grab comments only.")
 
@@ -44,7 +44,7 @@ def getSavedStories(session, hnuser, page_range):
     API by story ID."""
     story_ids = []
     for page_index in page_range:
-        saved = session.get(HACKERNEWS + '/saved?id=' + 
+        saved = session.get(HACKERNEWS + '/upvoted?id=' + 
                             hnuser + "&p=" + str(page_index))
         soup = BeautifulSoup(saved.content)
         for tag in soup.findAll('td',attrs={'class':'subtext'}):
@@ -65,7 +65,7 @@ def getSavedComments(session, hnuser, page_range):
     API by ID."""
     comment_ids = []
     for page_index in page_range:
-        saved = session.get(HACKERNEWS + '/saved?id=' + 
+        saved = session.get(HACKERNEWS + '/upvoted?id=' + 
                             hnuser + "&comments=t" + "&p=" + str(page_index))
         soup = BeautifulSoup(saved.content)
         for tag in soup.findAll('td',attrs={'class':'default'}):
