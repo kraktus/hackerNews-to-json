@@ -111,6 +111,9 @@ def getHackerNewsItem(item_id):
         return {"title":"Item " + item_id + " could not be retrieved",
                 "id":item_id}
 
+def item2stderr(item_id, item_count):
+    sys.stderr.write("Got item " + item_id + ". ({})\n".format(item_count))
+    
 def main():
     json_items = {"saved_stories":list(), "saved_comments":list()}
     if arguments.stories and arguments.comments:
@@ -118,47 +121,49 @@ def main():
         arguments.stories = False
         arguments.comments = False
         main()
-    elif arguments.stories:
-        story_ids = getSavedStories( loginToHackerNews(arguments.username,
-                                                       arguments.password ),
-                                     arguments.username, 
-                                     range(1, arguments.number + 1))
+    item_count = 0
+    session = loginToHackerNews(arguments.username, arguments.password)
+    page_range = range(1, arguments.number + 1)
+    if arguments.stories:
+        story_ids = getSavedStories(session,
+                                    arguments.username, 
+                                    page_range)
         for story_id in story_ids:
             json_items["saved_stories"].append(getHackerNewsItem(story_id))
-            sys.stderr.write("Got item " + story_id + ".\n")
+            item_count += 1
+            item2stderr(story_id, item_count)
         if arguments.file:
             with open(arguments.file, 'w') as outfile:
                 json.dump(json_items, outfile)
         else:
             print(json.dumps(json_items))
     elif arguments.comments:
-        comment_ids = getSavedComments(loginToHackerNews(arguments.username,
-                                                         arguments.password),
+        comment_ids = getSavedComments(session,
                                        arguments.username,
-                                       range(1, arguments.number + 1))
+                                       page_range)
         for comment_id in comment_ids:
             json_items["saved_comments"].append(getHackerNewsItem(comment_id))
-            sys.stderr.write("Got item " + comment_id + ".\n")
+            item_count += 1
+            item2stderr(comment_id, item_count)
         if arguments.file:
             with open(arguments.file, 'w') as outfile:
                 json.dump(json_items, outfile)
         else:
             print(json.dumps(json_items))
     else:
-        story_ids = getSavedStories(loginToHackerNews(arguments.username,
-                                                      arguments.password),
+        story_ids = getSavedStories(session,
                                     arguments.username,
-                                    range(1, arguments.number + 1))
-        comment_ids = getSavedComments(loginToHackerNews(arguments.username,
-                                                         arguments.password),
+                                    page_range)
+        comment_ids = getSavedComments(session,
                                        arguments.username,
-                                       range(1, arguments.number + 1))
+                                       page_range)
         for story_id in story_ids:
             json_items["saved_stories"].append(getHackerNewsItem(story_id))
-            sys.stderr.write("Got item " + story_id + ".\n")
+            item_count += 1
+            item2stderr(story_id, item_count)
         for comment_id in comment_ids:
             json_items["saved_comments"].append(getHackerNewsItem(comment_id))
-            sys.stderr.write("Got item " + comment_id + ".\n")
+            item2stderr(comment_id, item_count)
         if arguments.file:
             with open(arguments.file, 'w') as outfile:
                 json.dump(json_itms, outfile)
