@@ -13,6 +13,7 @@ __copyright__ = "Copyright 2013-2014, Luciano Fiandesio"
 __author__ = "Luciano Fiandesio <http://fiandes.io/> & John David Pressman <http://jdpressman.com>"
 
 import argparse
+import time
 import re
 import sys
 import urllib
@@ -103,6 +104,7 @@ def loginToHackerNews(username, password):
 
 def getHackerNewsItem(item_id):
     """Get an 'item' as specified in the HackerNews v0 API."""
+    time.sleep(0.2)
     item_json_link = "https://hacker-news.firebaseio.com/v0/item/" + item_id + ".json"
     try:
         with urllib.request.urlopen(item_json_link) as item_json:
@@ -111,8 +113,9 @@ def getHackerNewsItem(item_id):
         return {"title":"Item " + item_id + " could not be retrieved",
                 "id":item_id}
 
-def item2stderr(item_id, item_count):
-    sys.stderr.write("Got item " + item_id + ". ({})\n".format(item_count))
+def item2stderr(item_id, item_count, item_total):
+    sys.stderr.write("Got item " + item_id + ". ({} of {})\n".format(item_count,
+                                                                     item_total))
     
 def main():
     json_items = {"saved_stories":list(), "saved_comments":list()}
@@ -120,55 +123,31 @@ def main():
         # Assume that if somebody uses both flags they mean to grab both
         arguments.stories = False
         arguments.comments = False
-        main()
     item_count = 0
     session = loginToHackerNews(arguments.username, arguments.password)
     page_range = range(1, arguments.number + 1)
-    if arguments.stories:
-        story_ids = getSavedStories(session,
-                                    arguments.username, 
-                                    page_range)
-        for story_id in story_ids:
-            json_items["saved_stories"].append(getHackerNewsItem(story_id))
-            item_count += 1
-            item2stderr(story_id, item_count)
-        if arguments.file:
-            with open(arguments.file, 'w') as outfile:
-                json.dump(json_items, outfile)
-        else:
-            print(json.dumps(json_items))
-    elif arguments.comments:
-        comment_ids = getSavedComments(session,
-                                       arguments.username,
-                                       page_range)
-        for comment_id in comment_ids:
-            json_items["saved_comments"].append(getHackerNewsItem(comment_id))
-            item_count += 1
-            item2stderr(comment_id, item_count)
-        if arguments.file:
-            with open(arguments.file, 'w') as outfile:
-                json.dump(json_items, outfile)
-        else:
-            print(json.dumps(json_items))
-    else:
+    if arguments.stories or (not arguments.stories and not arguments.comments):
         story_ids = getSavedStories(session,
                                     arguments.username,
                                     page_range)
-        comment_ids = getSavedComments(session,
-                                       arguments.username,
-                                       page_range)
         for story_id in story_ids:
             json_items["saved_stories"].append(getHackerNewsItem(story_id))
             item_count += 1
-            item2stderr(story_id, item_count)
+            item2stderr(story_id, item_count, len(story_ids))
+    if arguments.comments or (not arguments.stories and not arguments.comments):
+        item_count = 0
+        comment_ids = getSavedComments(session,
+                                       arguments.username,
+                                       page_range)
         for comment_id in comment_ids:
             json_items["saved_comments"].append(getHackerNewsItem(comment_id))
-            item2stderr(comment_id, item_count)
-        if arguments.file:
-            with open(arguments.file, 'w') as outfile:
-                json.dump(json_itms, outfile)
-        else:
-            print(json.dumps(json_items))
+            item_count += 1
+            item2stderr(comment_id, item_count, len(comment_ids))
+    if arguments.file:
+        with open(arguments.file, 'w') as outfile:
+            json.dump(json_items, outfile)
+    else:
+        print(json.dumps(json_items))
 
 if __name__ == "__main__":
     main()
