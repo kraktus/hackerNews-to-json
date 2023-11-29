@@ -10,8 +10,10 @@ Originally developed on iPad by Luciano Fiandesio with the awesome Pythonista (h
 
 ## How to use
 
-`HN_COMMENTS_ACCT=foo HN_COMMENTS_PW=bar python hn2json.py -n [Number of pages to grab] -f [JSON filename]`
+`HN_COMMENTS_ACCT=foo HN_COMMENTS_PW=bar python hn2json.py -n [Number of pages to grab, default 1] -f [JSON filename]`
 
 See `python hn2json.py -h` for more options.
+
+To download all your comments/stories, put a very high page number.
 
 You can also set `HN_COMMENTS_ACCT` and `HN_COMMENTS_PW` in an `.env` file in the same directory as the script.
