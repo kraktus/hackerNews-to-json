@@ -179,7 +179,7 @@ class Req:
             )
             soup = BeautifulSoup(saved.content, features="html.parser")
             page_ids = []
-            for tag in soup.findAll("td", attrs={"class": klass}):
+            for tag in soup.find_all("td", attrs={"class": klass}):
                 if tag.a is not type(None):
                     a_tags = tag.find_all("a")
                     for a_tag in a_tags:
