@@ -17,3 +17,7 @@ See `python hn2json.py -h` for more options.
 To download all your comments/stories, put a very high page number.
 
 You can also set `HN_COMMENTS_ACCT` and `HN_COMMENTS_PW` in an `.env` file in the same directory as the script.
+
+To only download your upvoted stories add `-s story` 
+
+`HN_COMMENTS_ACCT=xxx HN_COMMENTS_PW= python hn2json.py -n 200 -f ./hn2json.json -s story`
